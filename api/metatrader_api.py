@@ -92,6 +92,15 @@ class MT5:
                 order_type = self.mt5.ORDER_TYPE_SELL_STOP
             elif order_type == "BUY_STOP":
                 order_type = self.mt5.ORDER_TYPE_BUY_STOP
+            elif order_type == "BUY_MARKET":
+                order_type = self.mt5.ORDER_TYPE_BUY
+            elif order_type == "SELL_MARKET":
+                order_type = self.mt5.ORDER_TYPE_SELL
+            elif order_type == "BUY_LIMIT":
+                order_type = self.mt5.ORDER_TYPE_BUY_LIMIT
+            elif order_type == "SELL_LIMIT":
+                order_type = self.mt5.ORDER_TYPE_SELL_LIMIT
+    
 
             # Create the request
             request = {

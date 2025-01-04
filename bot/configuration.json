@@ -41,7 +41,7 @@
     "partial_close": false
   },
   "tradable_symbols": {
-    "XAUUSD": [
+    "BTCUSD": [
       {
         "granularity": "M1",
         "indicators": {},

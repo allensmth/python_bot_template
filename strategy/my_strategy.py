@@ -24,9 +24,10 @@ def run_strategy(
         
         bias = -3
 
+
         # Calculate short and long SMAs based on the trade settings
-        short_sma = candle_data['Close'].rolling(window=5).mean()
-        long_sma = candle_data['Close'].rolling(window=20).mean()
+        short_sma = candle_data['Close'].rolling(window=10).mean()
+        long_sma = candle_data['Close'].rolling(window=40).mean()
 
         # 先决定趋势方向，如果1H的短期均线大于长期均线，说明是上涨趋势，如果1H的短期均线小于长期均线，说明是下跌趋势
         trend = 0
@@ -43,36 +44,33 @@ def run_strategy(
 
         # 计算target_price，如果是上涨趋势，target_price是最高价，如果是下跌趋势，target_price是最低价
         target_price = 0
-        if trend == 1:
+        sl_price = 0
+        if bias > 0:
             target_price = max_price
-        elif trend == -1:
+            sl_price = min_price
+        else:
             target_price = min_price
+            sl_price = max_price
         
         #取到160ma的值
-        talib.MA(candle_data['Close'], timeperiod=160, matype=0)
+        priceMA = talib.MA(candle_data['Close'], timeperiod=160, matype=0).iloc[-1]
+        atr14 = talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=14).iloc[-1]
 
         if bias == -3:
             #如果当前价格在和160 ma的差距绝对值值小于atr的1/2，并且当前的candle不是一个大阳线 那么signal = -1
-            if (abs(candle_data['Close'].iloc[-1] - talib.MA(candle_data['Close'], timeperiod=160, matype=0).iloc[-1]) < talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=14).iloc[-1]/2 
+            if (abs(candle_data['Close'].iloc[-1] - priceMA) < atr14/2 
                 and talib.CDLHAMMER(candle_data['Open'], candle_data['High'], candle_data['Low'], candle_data['Close']) == 0):
-                signal = -1
+                # 如果盈亏比大于2，那么signal = -1
+                if (target_price - candle_data['Close'].iloc[-2]) / (candle_data['Close'].iloc[-2] - sl_price) > 2:
+                    signal = -1
             #如果当前价格在和160 ma的差距绝对值值小于atr的1/2，并且当前的candle不是一个大阴线 那么signal = 1
         if bias == 3:
-            if (abs(candle_data['Close'].iloc[-1] - talib.MA(candle_data['Close'], timeperiod=160, matype=0).iloc[-1]) < talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=14).iloc[-1]/2
+            if (abs(candle_data['Close'].iloc[-1] - priceMA) < atr14/2 
                 and talib.CDLHAMMER(candle_data['Open'], candle_data['High'], candle_data['Low'], candle_data['Close']) == 0):
-                signal = 1
+                 if (target_price - candle_data['Close'].iloc[-2]) / (candle_data['Close'].iloc[-2] - sl_price) > 2:
+                    signal = 1
             
-
-
-           
-            
-
         
-
-        # 计算当前的candle
-        talib.CDLENGULFING(candle_data['Open'], candle_data['High'], candle_data['Low'], candle_data['Close'])
-
-
         # Check for buy or sell signals
         if signal == 1:
             order_type = "BUY_STOP"
