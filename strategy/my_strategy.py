@@ -22,6 +22,7 @@ def run_strategy(
         sl = 0  # Stop Loss
         tp = 0  # Take Profit
         
+        bias = -3
 
         # Calculate short and long SMAs based on the trade settings
         short_sma = candle_data['Close'].rolling(window=5).mean()
@@ -47,18 +48,37 @@ def run_strategy(
         elif trend == -1:
             target_price = min_price
         
+        #取到160ma的值
+        talib.MA(candle_data['Close'], timeperiod=160, matype=0)
+
+        if bias == -3:
+            #如果当前价格在和160 ma的差距绝对值值小于atr的1/2，并且当前的candle不是一个大阳线 那么signal = -1
+            if (abs(candle_data['Close'].iloc[-1] - talib.MA(candle_data['Close'], timeperiod=160, matype=0).iloc[-1]) < talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=14).iloc[-1]/2 
+                and talib.CDLHAMMER(candle_data['Open'], candle_data['High'], candle_data['Low'], candle_data['Close']) == 0):
+                signal = -1
+            #如果当前价格在和160 ma的差距绝对值值小于atr的1/2，并且当前的candle不是一个大阴线 那么signal = 1
+        if bias == 3:
+            if (abs(candle_data['Close'].iloc[-1] - talib.MA(candle_data['Close'], timeperiod=160, matype=0).iloc[-1]) < talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=14).iloc[-1]/2
+                and talib.CDLHAMMER(candle_data['Open'], candle_data['High'], candle_data['Low'], candle_data['Close']) == 0):
+                signal = 1
+            
+
+
+           
+            
+
+        
+
         # 计算当前的candle
         talib.CDLENGULFING(candle_data['Open'], candle_data['High'], candle_data['Low'], candle_data['Close'])
 
 
         # Check for buy or sell signals
-        if short_sma.iloc[-1] > long_sma.iloc[-1]:
-            signal = 1  # Buy signal
+        if signal == 1:
             order_type = "BUY_STOP"
             sl = candle_data['Low'].min()  # Example stop loss: Lowest price in the dataset
             tp = candle_data['Close'].iloc[-1] + (candle_data['Close'].iloc[-1] - sl) * strategy.profit_ratio  # Take profit calculation
-        elif short_sma.iloc[-1] < long_sma.iloc[-1]:
-            signal = -1  # Sell signal
+        elif signal == -1:
             order_type = "SELL_STOP"
             sl = candle_data['High'].max()  # Example stop loss: Highest price in the dataset
             tp = candle_data['Close'].iloc[-1] - (sl - candle_data['Close'].iloc[-1]) * strategy.profit_ratio  # Take profit calculation
