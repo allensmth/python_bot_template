@@ -49,6 +49,20 @@ class DataDB:
         cursor.close()
         return result
 
+    def describe_table(self, table_name):
+        if self.connection is None:
+            print("Not connected to the database")
+            return None
+        cursor = self.connection.cursor()
+        cursor.execute(f"""
+            SELECT column_name, data_type, is_nullable, column_default
+            FROM information_schema.columns
+            WHERE table_name = %s
+        """, (table_name,))
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+
     def close(self):
         if self.connection is not None:
             self.connection.close()
@@ -59,8 +73,8 @@ if __name__ == "__main__":
     db = DataDB()
     db.connect()
     
-    # Example query
-    result = db.query_single("SELECT NOW();")
-    print("Current Time:", result)
+    # Describe table
+    table_description = db.describe_table("t_signal")
+    print("Table Description:", table_description)
     
     db.close()
