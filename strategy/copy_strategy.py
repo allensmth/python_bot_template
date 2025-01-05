@@ -39,9 +39,13 @@ def run_strategy(
                     
                     sl = 0
                     if signal['order_type'] == 'BUY_MARKET':
-                        sl = candle_data['Low'].iloc[-180:].min() - atr15 / 2
+                        sl = candle_data['Low'].iloc[-180:].min() - atr15
+                    elif signal['order_type'] == 'SELL_MARKET':
+                        sl = candle_data['High'].iloc[-180:].max() + atr15 
                     else:
-                        sl = candle_data['High'].iloc[-180:].max() + atr15 / 2
+                        mark_signal_as_handled(db, signal)
+                        db.close()
+                        return None
 
                     signal_decision = SignalDecision(
                         signal=signal['signal'],
@@ -49,11 +53,12 @@ def run_strategy(
                         order_type=signal['order_type'],
                         current_price=candle_data['Close'].iloc[-1],
                         volume=None,
-                        risk=signal['risk'],
+                        risk=strategy.risk,
                         take_profit=None,
                         stop_loss=sl,
                         signal_timestamp=datetime.now()
                     )
+
                     log_message(f"run_strategy: Signal generated for {symbol}: {signal_decision}", symbol)
                     mark_signal_as_handled(db, signal)
                     db.close()
