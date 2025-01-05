@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import os
 
@@ -22,7 +23,8 @@ class DataDB:
                 password=self.password,
                 host=self.host,
                 port=self.port,
-                dbname=self.dbname
+                dbname=self.dbname,
+                cursor_factory=RealDictCursor  # 设置游标工厂为 RealDictCursor
             )
             print("Connection successful!")
         except Exception as e:

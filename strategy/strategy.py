@@ -2,10 +2,11 @@ import pandas as pd
 from datetime import datetime
 from typing import Optional
 import talib
+import pytz
 from bot.risk_management import calculate_lot_size
 from models.individual_strategy import IndividualStrategy
 from models.signal_decision import SignalDecision
-from db import DataDB
+from db.db import DataDB
 
 
 # Function to articulate run_strategy
@@ -28,11 +29,16 @@ def run_strategy(
 
         # 如果signal存在，返回SignalDecision对象
         if signal:
+            mark_signal_as_handled(db, signal)
             # 如果查询得到signal的price和当前价格差距不大,小于atr的1/2那么操作，如果signal的创建时间差距在15分钟内，那么操作
             atr15 = talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=15).iloc[-1]
             #如果sinal的操作是market，那么直接操作
             if signal['order_type'] == 'BUY_MARKET' or signal['order_type'] == 'SELL_MARKET':
-                if abs(signal['price'] - candle_data['Close'].iloc[-1]) < atr15 * 5 and (datetime.now() - signal['created_at']).seconds < 15 * 60:
+                # 获取当前时间并添加时区信息
+                now = datetime.now(pytz.utc)
+                signal_created_at = signal['created_at'].replace(tzinfo=pytz.utc)
+                
+                if abs(signal['price'] - candle_data['Close'].iloc[-1]) < atr15 * 5 and (now - signal_created_at).seconds < 15 * 60:
                     #计算sl
 
                     # 如果是买单，sl是过去180根k线的最低价 再减去atr的1/2
@@ -56,7 +62,7 @@ def run_strategy(
                         risk=strategy.risk,
                         take_profit=None,
                         stop_loss=sl,
-                        signal_timestamp=datetime.now()
+                        signal_timestamp=now
                     )
 
                     log_message(f"run_strategy: Signal generated for {symbol}: {signal_decision}", symbol)
@@ -74,22 +80,21 @@ def run_strategy(
 
 def mark_signal_as_handled(db, signal):
     if signal:
-            # 标识为handled为true, 同时更新order_info
+        # 标识为handled为true, 同时更新order_info
         update_query = """
             UPDATE t_signal
             SET handled = true, handled_time = NOW(), order_info = %s
             WHERE id = %s
-            """
-        db.query_single(update_query, (signal['order_info'], signal['id'],))
+        """
+        db.query_single(update_query, (signal['order_info'], signal['id']))
         print(f"Signal handled: {signal}")
 
 def get_unhandled_signal(db: DataDB, symbol: str) -> Optional[dict]:
-        # 查询当前symbol的handled为false的第一条数据
-        signal_query = """
-            SELECT * FROM t_signal
-            WHERE symbol = %s AND handled = false
-            ORDER BY created_at ASC
-            LIMIT 1
-        """
-        return db.query_single(signal_query, (symbol,))
-        
+    # 查询当前symbol的handled为false的第一条数据
+    signal_query = """
+        SELECT * FROM t_signal
+        WHERE symbol = %s AND handled = false
+        ORDER BY created_at ASC
+        LIMIT 1
+    """
+    return db.query_single(signal_query, (symbol,))
