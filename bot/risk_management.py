@@ -23,6 +23,20 @@ def calculate_lot_size(mt5: MT5, signal_decision: SignalDecision, log_message: c
     balance = mt5.mt5.account_info().balance
     risk_amt = signal_decision.risk * balance
     
+    # 获取所有已经开仓的交易
+
+    open_positions = mt5.mt5.positions_get()
+    total_risk = 0
+
+    for position in open_positions:
+        if position.symbol == signal_decision.symbol:
+            position_pips = abs(position.price_open - position.sl) / trade_multiper
+            position_risk = position.volume * position_pips * pip_value
+            total_risk += position_risk
+
+    # 将当前交易的风险加入总风险中
+    total_risk += risk_amt
+
     # Volume 
     d_v = decimal.Decimal(str(volume_step))
     d_v = abs(d_v.as_tuple().exponent)
@@ -31,6 +45,6 @@ def calculate_lot_size(mt5: MT5, signal_decision: SignalDecision, log_message: c
     d_p = decimal.Decimal(str(trade_multiper))
     d_p = abs(d_p.as_tuple().exponent)
     
-    units = round(risk_amt / (num_pips * pip_value), d_v)
+    units = round(total_risk / (num_pips * pip_value), d_v)
     
     return units, trade_multiper, d_p
