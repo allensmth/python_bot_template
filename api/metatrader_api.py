@@ -101,7 +101,8 @@ class MT5:
             elif order_type == "SELL_LIMIT":
                 order_type = self.mt5.ORDER_TYPE_SELL_LIMIT
     
-
+            
+            
             # Create the request
             request = {
                 "action": self.mt5.TRADE_ACTION_PENDING,
@@ -115,7 +116,27 @@ class MT5:
                 "type_time": self.mt5.ORDER_TIME_GTC,
                 "comment": f"{comment}",
             }
+           
             
+            if order_type == self.mt5.ORDER_TYPE_BUY:
+                point = mt5.symbol_info(symbol).point
+                price = mt5.symbol_info_tick(symbol).ask
+                deviation = 200
+                request = {
+                    "action": mt5.TRADE_ACTION_DEAL,
+                    "symbol": symbol,
+                    "volume": volume,
+                    "type": mt5.ORDER_TYPE_BUY,
+                    "price": price,
+                    "sl": stop_loss,
+                    "tp": take_profit,
+                    "deviation": deviation,
+                    "magic": 234000,
+                    "comment": "python script open",
+                    "type_time": mt5.ORDER_TIME_GTC,
+                    "type_filling": mt5.ORDER_FILLING_FOK,
+                }
+                
             print(f"palce_order: {request}")
 
             # Send the order to MT5

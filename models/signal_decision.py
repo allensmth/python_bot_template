@@ -18,4 +18,4 @@ class SignalDecision:
     granularity_ctf_granularity: Optional[str] = None
     
     def __repr__(self):
-        return f"SignalDecision(): symbol={self.symbol}, order_type={self.order_type}, signal_timestamp={self.signal_timestamp}"
+        return f"SignalDecision(): symbol={self.symbol}, order_type={self.order_type}, stop_loss={self.stop_loss}, signal_timestamp={self.signal_timestamp}"

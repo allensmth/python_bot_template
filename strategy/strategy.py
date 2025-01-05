@@ -38,29 +38,36 @@ def run_strategy(
                 now = datetime.now(pytz.utc)
                 signal_created_at = signal['created_at'].replace(tzinfo=pytz.utc)
                 
-                if abs(signal['price'] - candle_data['Close'].iloc[-1]) < atr15 * 5 and (now - signal_created_at).seconds < 15 * 60:
+                if abs(signal['price'] - candle_data['Close'].iloc[-1]) < atr15 * 5 and (now - signal_created_at).seconds < 150 * 60:
                     #计算sl
 
                     # 如果是买单，sl是过去180根k线的最低价 再减去atr的1/2
                     
                     sl = 0
+                    tp = 0
+                    oper_type = 0
                     if signal['order_type'] == 'BUY_MARKET':
                         sl = candle_data['Low'].iloc[-180:].min() - atr15
+                        # tp 去180根k线的最高价 
+                        tp = candle_data['Close'].iloc[-1] + (candle_data['Close'].iloc[-1] - sl) * strategy.profit_ratio
+                        oper_type = 1
                     elif signal['order_type'] == 'SELL_MARKET':
                         sl = candle_data['High'].iloc[-180:].max() + atr15 
+                        tp = candle_data['Close'].iloc[-1] - (sl - candle_data['Close'].iloc[-1]) * strategy.profit_ratio
+                        oper_type = -1
                     else:
                         mark_signal_as_handled(db, signal)
                         db.close()
                         return None
 
                     signal_decision = SignalDecision(
-                        signal=signal['signal'],
+                        signal=oper_type,
                         symbol=signal['symbol'],
                         order_type=signal['order_type'],
                         current_price=candle_data['Close'].iloc[-1],
                         volume=None,
                         risk=strategy.risk,
-                        take_profit=None,
+                        take_profit=tp,
                         stop_loss=sl,
                         signal_timestamp=now
                     )
@@ -82,7 +89,7 @@ def mark_signal_as_handled(db, signal):
     if signal:
         # 标识为handled为true, 同时更新order_info
         update_query = """
-            UPDATE t_signal
+            UPDATE t_signals
             SET handled = true, handled_time = NOW(), order_info = %s
             WHERE id = %s
         """
@@ -93,7 +100,7 @@ def mark_signal_as_handled(db, signal):
 def get_unhandled_signal(db: DataDB, symbol: str) -> Optional[dict]:
     # 查询当前symbol的handled为false的第一条数据
     signal_query = """
-        SELECT * FROM t_signal
+        SELECT * FROM t_signals
         WHERE symbol = %s AND handled = false
         ORDER BY created_at ASC
         LIMIT 1
