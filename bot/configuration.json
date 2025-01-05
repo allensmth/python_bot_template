@@ -2,16 +2,16 @@
   "bot_name": "Bot_01",
   "strategy_name": "Template",
   "active_status": true,
-  "timezone": "Etc/GMT-2",
+  "timezone": "Etc/GMT+8",
   "sleep_time": 10,
-  "start_time": "9:00",
-  "end_time": "21:00",
+  "start_time": "0:01",
+  "end_time": "23:59",
   "risk_management": {
     "max_trade_percentage": 0.01,
     "max_stop_loss_percentage": 0.01,
     "take_profit_ratio": 0.05,
     "max_concurrent_trades": 3,
-    "max_daily_loss_percentage": 0.03
+    "max_daily_loss_percentage": 0.02
   },
   "error_handling": {
     "on_error": "retry",
@@ -38,7 +38,7 @@
   },
   "trade_management": {
     "trailing_stop": false,
-    "partial_close": false
+    "partial_close": true
   },
   "tradable_symbols": {
     "BTCUSD": [

@@ -25,7 +25,7 @@ def calculate_lot_size(mt5: MT5, signal_decision: SignalDecision, log_message: c
     
     # 获取所有已经开仓的交易
 
-    open_positions = mt5.positions_get()
+    open_positions = mt5.mt5.positions_get()
     total_risk = 0
 
     for position in open_positions:

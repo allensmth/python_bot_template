@@ -1,6 +1,6 @@
 # import mt5_interface
 # from models.trade_management import TradeSettings
-import strategy.strategy as strategy
+import strategy.strategy_bak as strategy_bak
 
 from datetime import datetime as dt
 
