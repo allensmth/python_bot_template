@@ -86,7 +86,8 @@ def mark_signal_as_handled(db, signal):
             SET handled = true, handled_time = NOW(), order_info = %s
             WHERE id = %s
         """
-        db.query_single(update_query, (signal['order_info'], signal['id']))
+        db.execute_update(update_query, (signal['order_info'], signal['id']))
+        
         print(f"Signal handled: {signal}")
 
 def get_unhandled_signal(db: DataDB, symbol: str) -> Optional[dict]:
@@ -97,4 +98,8 @@ def get_unhandled_signal(db: DataDB, symbol: str) -> Optional[dict]:
         ORDER BY created_at ASC
         LIMIT 1
     """
-    return db.query_single(signal_query, (symbol,))
+    signal = db.query_single(signal_query, (symbol,))
+    if signal:
+        return signal
+    else:
+        return None

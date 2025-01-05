@@ -51,6 +51,21 @@ class DataDB:
         cursor.close()
         return result
 
+    def execute_update(self, query, params=None):
+        if self.connection is None:
+            print("Not connected to the database")
+            return None
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(query, params)
+            self.connection.commit()
+            print("Update successful!")
+        except Exception as e:
+            print(f"Failed to execute update: {e}")
+            self.connection.rollback()
+        finally:
+            cursor.close()
+
     def describe_table(self, table_name):
         if self.connection is None:
             print("Not connected to the database")
