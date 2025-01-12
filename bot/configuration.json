@@ -37,7 +37,7 @@
     "trade_processor": false
   },
   "trade_management": {
-    "trailing_stop": false,
+    "trailing_stop": true,
     "partial_close": true
   },
   "tradable_symbols": {

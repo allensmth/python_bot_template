@@ -238,16 +238,16 @@ class MT5:
         return order_result
 
     # Function to modify an open position
-    def modify_position(self, order_number, new_stop_loss, new_take_profit=None):
+    def modify_position(self, order_number, stop_loss, take_profit=None):
         """Modifies an open position with new stop loss and take profit values."""
         request = {
             "action": self.mt5.TRADE_ACTION_SLTP,
             "position": order_number,
-            "sl": new_stop_loss,
+            "sl": stop_loss,
         }
-        if new_take_profit is not None:
-            request["tp"] = new_take_profit
-
+        if take_profit is not None:
+            request["tp"] = take_profit
+ 
         order_result = self.mt5.order_send(request)
 
         if order_result[0] == 10009:
@@ -366,3 +366,7 @@ class MT5:
         # Request orders in the specified time range
         closed_deals = self.mt5.history_deals_get(utc_from, utc_to)
         return closed_deals
+
+    def symbol_info(self, symbol):
+        """Fetch symbol information."""
+        return mt5.symbol_info(symbol)

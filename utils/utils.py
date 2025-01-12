@@ -33,3 +33,4 @@ def get_decimals_places(value):
     
     # Decimals places
     return d_p
+
