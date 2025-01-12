@@ -265,7 +265,6 @@ class MT5:
             log_to_error(f"Error: fetch_candles failed for {symbol} in {mt5_timeframe}. Error: {error}")
             return pd.DataFrame()  # Return an empty DataFrame on failure
 
-
     # Function to query previous candlestick data from MT5
     def query_historic_data(self, symbol, number_of_candles, granularity):
         # Convert the timeframe into an MT5 friendly format
@@ -291,3 +290,46 @@ class MT5:
         positions = self.mt5.positions_get()
         # Return position objects
         return positions
+
+    # Function to partially close an open position
+    def partial_close_position(self, ticket, volume):
+        """Closes a part of an open position."""
+        position = self.mt5.positions_get(ticket=ticket)
+        if not position:
+            logging.error(f"Position with ticket #{ticket} not found")
+            return None
+
+        symbol = position[0].symbol
+        order_type = position[0].type  # 0 for buy, 1 for sell
+        
+        if order_type == self.mt5.ORDER_TYPE_BUY:
+            trade_type = self.mt5.ORDER_TYPE_SELL
+            price = self.mt5.symbol_info_tick(symbol).bid
+        else:
+            trade_type = self.mt5.ORDER_TYPE_BUY
+            price = self.mt5.symbol_info_tick(symbol).ask
+        
+        deviation = 200
+        request = {
+            "action": self.mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": volume,
+            "type": trade_type,
+            "position": ticket,
+            "price": price,
+            "deviation": deviation,
+            "magic": 234000,
+            "comment": "partial close",
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": self.mt5.ORDER_FILLING_FOK,
+        }
+        
+        print(f"partial_close_position: {request}")
+        order_result = self.mt5.order_send(request)
+
+        if order_result[0] == 10009:
+            logging.info(f"Partial close for ticket #{ticket} successful")
+            return order_result
+        else:
+            logging.error(f"Error partially closing ticket #{ticket}. ErrorCode: {order_result[0]}, Error Details: {order_result}")
+            return None

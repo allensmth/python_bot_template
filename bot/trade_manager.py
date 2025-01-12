@@ -49,7 +49,6 @@ class TradeManager:
                 self.log_to_error(f"close_open_trades: Failed to close trade for {trade.symbol}: {e}")
                 raise error
 
-
     def monitor_open_trades(self):
         """Monitors open trades and adjusts stop-loss or take-profit if necessary."""
         self.log_message("monitor_open_trades: Monitoring open trades...")
@@ -108,6 +107,9 @@ class TradeManager:
                 # Move stop loss to break even
                 self.mt5.modify_order(trade.order_id, stop_loss=trade.price_open)
                 self.log_message(f"manage_trade: Moved stop loss to break even for {trade.symbol}")
+                if self.risk_management["partial_close"]:
+                    partial_close_volume = round(trade.volume / 3, 2)
+                    self.partial_close_trade(trade.order_id, partial_close_volume)
             
             # Original trailing stop logic
             if current_price > trade.price_open + self.risk_management["max_stop_loss_percentage"] * trade.price_open:
@@ -125,6 +127,9 @@ class TradeManager:
                 # Move stop loss to break even
                 self.mt5.modify_order(trade.order_id, stop_loss=trade.price_open)
                 self.log_message(f"manage_trade: Moved stop loss to break even for {trade.symbol}")
+                if self.risk_management["partial_close"]:
+                    partial_close_volume = round(trade.volume / 3, 2)
+                    self.partial_close_trade(trade.order_id, partial_close_volume)
             
             # Original trailing stop logic
             if current_price < trade.price_open - self.risk_management["max_stop_loss_percentage"] * trade.price_open:
@@ -193,3 +198,26 @@ class TradeManager:
         """Stops the trade manager process."""
         self.is_running = False
         self.log_message("stop_trade_manager: Trade manager stopped.")
+
+    def partial_close_trade(self, ticket, volume):
+        """Partially closes an open trade."""
+        symbol_info = self.mt5.mt5.symbol_info_ticket(ticket)
+        if symbol_info is None:
+            self.log_error(f"Could not get symbol info for ticket {ticket}")
+            return
+
+        volume_step = symbol_info.volume_step
+        partial_close_volume = volume / 3
+
+        # Determine the number of decimal places from volume_step
+        import decimal
+        d_v = decimal.Decimal(str(volume_step))
+        decimals = abs(d_v.as_tuple().exponent)
+
+        partial_close_volume = round(partial_close_volume, decimals)
+
+        result = self.mt5.partial_close_position(ticket, partial_close_volume)
+        if result:
+            self.log_message(f"Partial close of ticket {ticket} with volume {partial_close_volume} successful.")
+        else:
+            self.log_error(f"Partial close of ticket {ticket} failed.")
