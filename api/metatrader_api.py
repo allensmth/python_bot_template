@@ -13,6 +13,9 @@ class MT5:
     MAX_LOGIN_ATTEMPTS = 3  # Define the max number of login attempts
     RETRY_DELAY = 5  # Delay in seconds before retrying the login
 
+    ORDER_TYPE_BUY = mt5.ORDER_TYPE_BUY
+    ORDER_TYPE_SELL = mt5.ORDER_TYPE_SELL
+
     def __init__(self) -> None:
         logging.basicConfig(level=logging.INFO) 
         self.mt5 = mt5
@@ -235,16 +238,16 @@ class MT5:
         return order_result
 
     # Function to modify an open position
-    def modify_position(self, order_number, symbol, new_stop_loss, new_take_profit):
-        # Create the request
+    def modify_position(self, order_number, new_stop_loss, new_take_profit=None):
+        """Modifies an open position with new stop loss and take profit values."""
         request = {
             "action": self.mt5.TRADE_ACTION_SLTP,
-            "symbol": symbol,
-            "sl": new_stop_loss,
-            # "tp": new_take_profit,
             "position": order_number,
+            "sl": new_stop_loss,
         }
-        # Send order to MT5
+        if new_take_profit is not None:
+            request["tp"] = new_take_profit
+
         order_result = self.mt5.order_send(request)
 
         if order_result[0] == 10009:

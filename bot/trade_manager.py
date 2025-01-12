@@ -68,30 +68,25 @@ class TradeManager:
     def calculate_stop_loss(self, symbol, order_type):
         """Calculate stop loss using ATR."""
         # Get historical data
-        candles = self.mt5.query_historic_data(symbol, 180, "M1")  # Adjusted count for ATR period
+        candles = self.mt5.fetch_candles(symbol, "M1", self.log_to_error, 180)  # Adjusted count for ATR period
 
-        if not candles or len(candles) < 14:
+        if len(candles) == 0 or len(candles) < 14:
             return None
 
         # Extract high, low, and close prices
-        high_prices = np.array([candle.high for candle in candles])
-        low_prices = np.array([candle.low for candle in candles])
-        close_prices = np.array([candle.close for candle in candles])
+        high_prices = candles['Low'].iloc[-180:].min() 
+        low_prices = candles['High'].iloc[-180:].max()
 
         # Calculate ATR
-        atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)[-1]
-        
-        decimals = get_decimals_places(symbol)
-
-        if order_type == self.mt5.BUY_ORDER:
+        atr = talib.ATR(candles['High'], candles['Low'], candles['Close'], timeperiod=15).iloc[-1]
+        if order_type == self.mt5.ORDER_TYPE_BUY:
             # Stop loss below the low
-            stop_loss = low_prices[-1] - atr
+            stop_loss = low_prices - atr
         else:
             # Stop loss above the high
-            stop_loss = high_prices[-1] + atr
+            stop_loss = high_prices + atr
         
-        decimal_places = get_decimals_places(symbol)
-        return round(stop_loss, decimal_places)
+        return round(float(stop_loss), 2) #TODO 
 
     def manage_position(self, position, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
@@ -144,7 +139,7 @@ class TradeManager:
                 if new_stop_loss < position.stop_loss:
                     self.mt5.modify_order(position.identifier, stop_loss=new_stop_loss)
                     self.log_message(f"manage_trade: Adjusted stop-loss for {position.symbol} to {new_stop_loss}")
-
+ 
     def close_trade_early(self, position, current_price):
         """Closes a trade early if it meets specific conditions (e.g., profit threshold)."""
         current_profit = self.mt5.calculate_profit(position)
