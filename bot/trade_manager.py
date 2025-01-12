@@ -1,6 +1,5 @@
 # import mt5_interface
 # from models.trade_management import TradeSettings
-import strategy.strategy_bak as strategy_bak
 
 from datetime import datetime as dt
 
@@ -36,22 +35,22 @@ class TradeManager:
         
     def close_open_trades(self):
         """Closes all open trades before stopping the bot."""
-        self.log_to_main("close_open_trades: Closing all open trades before stopping...")
+        self.log_to_main("close_open_trades: Closing all open trades before stopping...", "trade_manager")
 
         open_trades = self.mt5.get_open_trades()
         for trade in open_trades:
             try:
                 # Attempt to close the trade
                 self.mt5.close_order(trade.order_id)
-                self.log_message(f"close_open_trades: Successfully closed trade for {trade.symbol}")
+                self.log_message(f"close_open_trades: Successfully closed trade for {trade.symbol}", "trade_manager")
 
             except Exception as error:
-                self.log_to_error(f"close_open_trades: Failed to close trade for {trade.symbol}: {e}")
+                self.log_to_error(f"close_open_trades: Failed to close trade for {trade.symbol}: {error}")
                 raise error
 
     def monitor_open_trades(self):
         """Monitors open trades and adjusts stop-loss or take-profit if necessary."""
-        self.log_message("monitor_open_trades: Monitoring open trades...")
+        self.log_message("monitor_open_trades: Monitoring open trades...", "trade_manager")
 
         try:
             open_trades = self.mt5.get_open_trades()  # Fetch open trades
@@ -183,7 +182,7 @@ class TradeManager:
 
     def run_trade_manager(self):
         """Main loop to monitor and manage open trades."""
-        self.log_message("run_trade_manager: Running trade manager...")
+        self.log_message("run_trade_manager: Running trade manager...", "trade_manager")
 
         while self.is_running:
             try:
@@ -197,7 +196,7 @@ class TradeManager:
     def stop_trade_manager(self):
         """Stops the trade manager process."""
         self.is_running = False
-        self.log_message("stop_trade_manager: Trade manager stopped.")
+        self.log_message("stop_trade_manager: Trade manager stopped.", "trade_manager")
 
     def partial_close_trade(self, ticket, volume):
         """Partially closes an open trade."""
