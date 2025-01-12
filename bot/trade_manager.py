@@ -28,6 +28,12 @@ class TradeManager:
         self.is_running = True  # Flag to control the trade monitoring loop
         self.daily_loss = 0  # Track daily loss to stop trading if threshold is met
         
+        # Break even points for different symbols
+        self.BREAK_EVEN_POINTS = {
+            "BTCUSD": 100,
+            "NAS100": 50
+        }
+        
     def close_open_trades(self):
         """Closes all open trades before stopping the bot."""
         self.log_to_main("close_open_trades: Closing all open trades before stopping...")
@@ -62,8 +68,20 @@ class TradeManager:
 
     def manage_trade(self, trade, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
+        # Get break even points for the symbol
+        break_even_points = self.BREAK_EVEN_POINTS.get(trade.symbol, 100)
+        
         if trade.order_type == "BUY_ORDER":
-            # Check if the current price has moved favorably for a BUY order
+            # Calculate profit in points
+            profit_points = (current_price - trade.price_open) * get_trade_multipler(trade.symbol)
+            
+            # Check if profit reaches break even points
+            if profit_points >= break_even_points and trade.stop_loss < trade.price_open:
+                # Move stop loss to break even
+                self.mt5.modify_order(trade.order_id, stop_loss=trade.price_open)
+                self.log_message(f"manage_trade: Moved stop loss to break even for {trade.symbol}")
+            
+            # Original trailing stop logic
             if current_price > trade.price_open + self.risk_management["max_stop_loss_percentage"] * trade.price_open:
                 new_stop_loss = current_price - self.risk_management["max_stop_loss_percentage"] * trade.price_open
                 if new_stop_loss > trade.stop_loss:
@@ -71,7 +89,16 @@ class TradeManager:
                     self.log_message(f"manage_trade: Adjusted stop-loss for {trade.symbol} to {new_stop_loss}")
 
         elif trade.order_type == "SELL_ORDER":
-            # Check if the current price has moved favorably for a SELL order
+            # Calculate profit in points
+            profit_points = (trade.price_open - current_price) * get_trade_multipler(trade.symbol)
+            
+            # Check if profit reaches break even points
+            if profit_points >= break_even_points and trade.stop_loss > trade.price_open:
+                # Move stop loss to break even
+                self.mt5.modify_order(trade.order_id, stop_loss=trade.price_open)
+                self.log_message(f"manage_trade: Moved stop loss to break even for {trade.symbol}")
+            
+            # Original trailing stop logic
             if current_price < trade.price_open - self.risk_management["max_stop_loss_percentage"] * trade.price_open:
                 new_stop_loss = current_price + self.risk_management["max_stop_loss_percentage"] * trade.price_open
                 if new_stop_loss < trade.stop_loss:
@@ -138,4 +165,3 @@ class TradeManager:
         """Stops the trade manager process."""
         self.is_running = False
         self.log_message("stop_trade_manager: Trade manager stopped.")
-
