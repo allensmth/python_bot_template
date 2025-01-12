@@ -171,7 +171,12 @@ class TradeManager:
 
     def track_daily_loss(self):
         """Tracks the bot's daily losses and stops trading if the max daily loss limit is reached."""
-        total_loss = sum([trade.loss for trade in self.mt5.get_closed_trades_today()])
+        closed_trades = self.mt5.get_closed_trades_today()
+        total_loss = 0
+        for trade in closed_trades:
+            profit = trade.profit
+            if profit < 0:
+                total_loss += abs(profit)
         account_balance = self.mt5.get_account_balance()
         max_daily_loss = self.risk_management["max_daily_loss_percentage"] * account_balance
 

@@ -333,3 +333,13 @@ class MT5:
         else:
             logging.error(f"Error partially closing ticket #{ticket}. ErrorCode: {order_result[0]}, Error Details: {order_result}")
             return None
+
+    def get_closed_trades_today(self):
+        """Retrieves all trades closed today."""
+        timezone = pytz.timezone("Etc/UTC")
+        utc_from = dt.datetime.now(timezone).replace(hour=0, minute=0, second=0, microsecond=0)
+        utc_to = dt.datetime.now(timezone).replace(hour=23, minute=59, second=59, microsecond=999)
+        
+        # Request orders in the specified time range
+        closed_trades = self.mt5.history_orders_get(utc_from, utc_to)
+        return closed_trades
