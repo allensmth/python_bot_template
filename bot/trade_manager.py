@@ -66,8 +66,36 @@ class TradeManager:
             self.log_to_error(f"monitor_open_trades: Critical error while monitoring trades: {error}")
             raise error
 
+    def calculate_stop_loss(self, symbol, order_type):
+        """Calculate stop loss based on 180 minutes of historical data"""
+        # Get 180 minutes of historical data (30 candles for M5 timeframe)
+        candles = self.mt5.get_historical_data(symbol, timeframe="M5", count=30)
+        
+        if not candles:
+            return None
+            
+        # Calculate candle heights
+        heights = [candle.high - candle.low for candle in candles]
+        avg_height = sum(heights) / len(heights)
+        
+        if order_type == "BUY_ORDER":
+            # For buy orders: lowest low - average height
+            lowest_low = min([candle.low for candle in candles])
+            return lowest_low - avg_height
+        else:
+            # For sell orders: highest high + average height
+            highest_high = max([candle.high for candle in candles])
+            return highest_high + avg_height
+
     def manage_trade(self, trade, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
+        # Check if stop loss is not set
+        if trade.stop_loss is None:
+            stop_loss = self.calculate_stop_loss(trade.symbol, trade.order_type)
+            if stop_loss:
+                self.mt5.modify_order(trade.order_id, stop_loss=stop_loss)
+                self.log_message(f"manage_trade: Set initial stop loss for {trade.symbol} at {stop_loss}")
+
         # Get break even points for the symbol
         break_even_points = self.BREAK_EVEN_POINTS.get(trade.symbol, 100)
         
