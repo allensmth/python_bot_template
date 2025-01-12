@@ -302,7 +302,9 @@ class Bot:
     def stop(self):
         self.log_to_main("stop: Gracefully stop the threads")
         
-        # self.trade_manager.close_open_trades()
+        # Stop trade manager first to ensure proper trade cleanup
+        self.trade_manager.stop_trade_manager()
+        self.trade_manager.close_open_trades()
                 
         self.is_running = False
         
@@ -319,6 +321,10 @@ class Bot:
                 run_signal_executor = threading.Thread(target=self.run_signal_executor, name="run_signal_executor_thread")
                 
             run_signal_executor.start()
+
+            # Start trade manager thread
+            trade_manager_thread = threading.Thread(target=self.trade_manager.run_trade_manager, name="trade_manager_thread")
+            trade_manager_thread.start()
             
             while self.is_running:
                 if not run_bot_thread.is_alive():
@@ -328,6 +334,10 @@ class Bot:
                 if not run_signal_executor.is_alive():
                     self.log_to_error("run: Signal executor thread has unexpectedly stopped.")
                     break 
+
+                if not trade_manager_thread.is_alive():
+                    self.log_to_error("run: Trade manager thread has unexpectedly stopped.")
+                    break
                 
                 time.sleep(1)
         except KeyboardInterrupt:

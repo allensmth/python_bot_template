@@ -48,14 +48,6 @@
         "risk": 0.01,
         "profit_ratio": 1
       }
-    ],
-     "NAS100": [
-      {
-        "granularity": "M1",
-        "indicators": {},
-        "risk": 0.02,
-        "profit_ratio": 5
-      }
     ]
   }
 }
