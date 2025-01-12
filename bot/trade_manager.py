@@ -37,7 +37,7 @@ class TradeManager:
         """Closes all open trades before stopping the bot."""
         self.log_to_main("close_open_trades: Closing all open trades before stopping...", "trade_manager")
 
-        open_trades = self.mt5.get_open_trades()
+        open_trades = self.mt5.get_open_postions()
         for trade in open_trades:
             try:
                 # Attempt to close the trade
@@ -48,23 +48,23 @@ class TradeManager:
                 self.log_to_error(f"close_open_trades: Failed to close trade for {trade.symbol}: {error}")
                 raise error
 
-    def monitor_open_trades(self):
+    def monitor_open_positions(self):
         """Monitors open trades and adjusts stop-loss or take-profit if necessary."""
         self.log_message("monitor_open_trades: Monitoring open trades...", "trade_manager")
 
         try:
-            open_trades = self.mt5.get_open_trades()  # Fetch open trades
-            for trade in open_trades:
+            open_positions = self.mt5.get_open_positions()  # Fetch open trades
+            for trade in open_positions:
                 # Get the current market price for the traded symbol
-                current_price = self.mt5.get_current_price(trade.symbol)
+                current_price = trade.price_current
                 # Adjust stop-loss or take-profit based on your strategy
-                self.manage_trade(trade, current_price)
+                self.manage_position(trade, current_price)
 
         except Exception as error:
             self.log_to_error(f"monitor_open_trades: Critical error while monitoring trades: {error}")
             raise error
 
-    def calculate_stop_loss(self, symbol, order_type):
+    def calculate_stop_loss(self, symbol, postion_type):
         """Calculate stop loss based on 180 minutes of historical data"""
         # Get 180 minutes of historical data (30 candles for M5 timeframe)
         candles = self.mt5.get_historical_data(symbol, timeframe="M5", count=30)
@@ -76,7 +76,7 @@ class TradeManager:
         heights = [candle.high - candle.low for candle in candles]
         avg_height = sum(heights) / len(heights)
         
-        if order_type == "BUY_ORDER":
+        if postion_type == self.mt5.ORDER_TYPE_BUY:
             # For buy orders: lowest low - average height
             lowest_low = min([candle.low for candle in candles])
             return lowest_low - avg_height
@@ -85,75 +85,73 @@ class TradeManager:
             highest_high = max([candle.high for candle in candles])
             return highest_high + avg_height
 
-    def manage_trade(self, trade, current_price):
+    def manage_position(self, position, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
         # Check if stop loss is not set
-        if trade.stop_loss is None:
-            stop_loss = self.calculate_stop_loss(trade.symbol, trade.order_type)
+        if position.sl is None or position.sl == 0.0:
+            stop_loss = self.calculate_stop_loss(position.symbol, position.type)
             if stop_loss:
-                self.mt5.modify_order(trade.order_id, stop_loss=stop_loss)
-                self.log_message(f"manage_trade: Set initial stop loss for {trade.symbol} at {stop_loss}")
+                self.mt5.modify_position(position.identifier, stop_loss=stop_loss)
+                self.log_message(f"manage_trade: Set initial stop loss for {position.symbol} at {stop_loss}")
 
         # Get break even points for the symbol
-        break_even_points = self.BREAK_EVEN_POINTS.get(trade.symbol, 100)
+        break_even_points = self.BREAK_EVEN_POINTS.get(position.symbol, 100)
         
-        if trade.order_type == "BUY_ORDER":
+        if position.type == self.mt5.ORDER_TYPE_BUY:
             # Calculate profit in points
-            profit_points = (current_price - trade.price_open) * get_trade_multipler(trade.symbol)
+            profit_points = (current_price - position.price_open) * get_trade_multipler(position.symbol)
             
             # Check if profit reaches break even points
-            if profit_points >= break_even_points and trade.stop_loss < trade.price_open:
+            if profit_points >= break_even_points and position.stop_loss < position.price_open:
                 # Move stop loss to break even
-                self.mt5.modify_order(trade.order_id, stop_loss=trade.price_open)
-                self.log_message(f"manage_trade: Moved stop loss to break even for {trade.symbol}")
+                self.mt5.modify_position(position.identifier, stop_loss=position.price_open)
+                self.log_message(f"manage_trade: Moved stop loss to break even for {position.symbol}")
                 if self.risk_management["partial_close"]:
-                    partial_close_volume = round(trade.volume / 3, 2)
-                    self.partial_close_trade(trade.order_id, partial_close_volume)
+                    partial_close_volume = round(position.volume / 3, 2)
+                    self.partial_close_position(position.identifier, partial_close_volume)
             
             # Original trailing stop logic
-            if current_price > trade.price_open + self.risk_management.max_stop_loss_percentage * trade.price_open:
-                new_stop_loss = current_price - self.risk_management.max_stop_loss_percentage * trade.price_open
-                if new_stop_loss > trade.stop_loss:
-                    self.mt5.modify_order(trade.order_id, stop_loss=new_stop_loss)
-                    self.log_message(f"manage_trade: Adjusted stop-loss for {trade.symbol} to {new_stop_loss}")
+            if current_price > position.price_open + self.risk_management.max_stop_loss_percentage * position.price_open:
+                new_stop_loss = current_price - self.risk_management.max_stop_loss_percentage * position.price_open
+                if new_stop_loss > position.stop_loss:
+                    self.mt5.modify_position(position.identifier, stop_loss=new_stop_loss)
+                    self.log_message(f"manage_trade: Adjusted stop-loss for {position.symbol} to {new_stop_loss}")
 
-        elif trade.order_type == "SELL_ORDER":
+        elif position.type == self.mt5.ORDER_TYPE_SELL:
             # Calculate profit in points
-            profit_points = (trade.price_open - current_price) * get_trade_multipler(trade.symbol)
+            profit_points = (position.price_open - current_price) * get_trade_multipler(position.symbol)
             
             # Check if profit reaches break even points
-            if profit_points >= break_even_points and trade.stop_loss > trade.price_open:
+            if profit_points >= break_even_points and position.stop_loss > position.price_open:
                 # Move stop loss to break even
-                self.mt5.modify_order(trade.order_id, stop_loss=trade.price_open)
-                self.log_message(f"manage_trade: Moved stop loss to break even for {trade.symbol}")
+                self.mt5.modify_order(position.order_id, stop_loss=position.price_open)
+                self.log_message(f"manage_trade: Moved stop loss to break even for {position.symbol}")
                 if self.risk_management["partial_close"]:
-                    partial_close_volume = round(trade.volume / 3, 2)
-                    self.partial_close_trade(trade.order_id, partial_close_volume)
+                    partial_close_volume = round(position.volume / 3, 2)
+                    self.partial_close_position(position.identifier, partial_close_volume)
             
             # Original trailing stop logic
-            if current_price < trade.price_open - self.risk_management.max_stop_loss_percentage * trade.price_open:
-                new_stop_loss = current_price + self.risk_management.max_stop_loss_percentage * trade.price_open
-                if new_stop_loss < trade.stop_loss:
-                    self.mt5.modify_order(trade.order_id, stop_loss=new_stop_loss)
-                    self.log_message(f"manage_trade: Adjusted stop-loss for {trade.symbol} to {new_stop_loss}")
+            if current_price < position.price_open - self.risk_management.max_stop_loss_percentage * position.price_open:
+                new_stop_loss = current_price + self.risk_management.max_stop_loss_percentage * position.price_open
+                if new_stop_loss < position.stop_loss:
+                    self.mt5.modify_order(position.identifier, stop_loss=new_stop_loss)
+                    self.log_message(f"manage_trade: Adjusted stop-loss for {position.symbol} to {new_stop_loss}")
 
-    def close_trade_early(self, trade, current_price):
+    def close_trade_early(self, position, current_price):
         """Closes a trade early if it meets specific conditions (e.g., profit threshold)."""
-        current_profit = self.mt5.calculate_profit(trade)
+        current_profit = self.mt5.calculate_profit(position)
 
         # Example: Close the trade early if it reaches the take-profit ratio
-        take_profit_target = self.risk_management["take_profit_ratio"] * (trade.price_open - trade.stop_loss)
+        take_profit_target = self.risk_management["take_profit_ratio"] * (position.price_open - position.sl)
         if current_profit >= take_profit_target:
-            self.mt5.close_order(trade.order_id)
-            self.log_message(f"close_trade_early: Closed trade {trade.symbol} early with profit {current_profit}")
+            self.mt5.close_postion(position.identifier)
+            self.log_message(f"close_trade_early: Closed trade {position.symbol} early with profit {current_profit}")
 
     def check_risk_limits(self, signal_decision):
         """Ensures that the trade meets risk management limits."""
         account_balance = self.mt5.get_account_info()["balance"]
-        open_trades = self.mt5.get_open_trades()
-
-        # Check the number of concurrent trades
-        if len(open_trades) >= self.risk_management.max_concurrent_trades:
+        open_positions = self.mt5.get_open_positions() # Check the number of concurrent trades
+        if len(open_positions) >= self.risk_management.max_concurrent_trades:
             self.log_to_error(f"check_risk_limits: Maximum concurrent trades reached. Ignoring new trade for {signal_decision.symbol}.")
             return False
 
@@ -192,7 +190,7 @@ class TradeManager:
         while self.is_running:
             try:
                 if self.track_daily_loss():  # Stop trading if daily loss limit is hit
-                    self.monitor_open_trades()  # Continuously monitor and manage open trades
+                    self.monitor_open_positions()  # Continuously monitor and manage open trades
             except Exception as e:
                 self.log_to_error(f"run_trade_manager: Critical error in trade management: {e}")
             finally:
@@ -203,7 +201,7 @@ class TradeManager:
         self.is_running = False
         self.log_message("stop_trade_manager: Trade manager stopped.", "trade_manager")
 
-    def partial_close_trade(self, ticket, volume):
+    def partial_close_position(self, ticket, volume):
         """Partially closes an open trade."""
         symbol_info = self.mt5.mt5.symbol_info_ticket(ticket)
         if symbol_info is None:

@@ -79,15 +79,7 @@ class MT5:
             logging.error("Failed to get account info")
             return None
 
-        # Display trading account data 'as is'
-        print(account_info)
-
-        # Display trading account data in the form of a dictionary
-        print("Show account_info()._asdict():")
         account_info_dict = account_info._asdict()
-        for prop in account_info_dict:
-            print(f"  {prop}={account_info_dict[prop]}")
-        print()
 
         return account_info_dict
     # Function to place a trade on MT5
