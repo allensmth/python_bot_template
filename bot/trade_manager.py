@@ -37,7 +37,7 @@ class TradeManager:
         """Closes all open trades before stopping the bot."""
         self.log_to_main("close_open_trades: Closing all open trades before stopping...", "trade_manager")
 
-        open_trades = self.mt5.get_open_postions()
+        open_trades = self.mt5.get_open_orders()
         for trade in open_trades:
             try:
                 # Attempt to close the trade
@@ -67,7 +67,7 @@ class TradeManager:
     def calculate_stop_loss(self, symbol, postion_type):
         """Calculate stop loss based on 180 minutes of historical data"""
         # Get 180 minutes of historical data (30 candles for M5 timeframe)
-        candles = self.mt5.get_historical_data(symbol, timeframe="M5", count=30)
+        candles = self.mt5.query_historic_data(symbol, 180, "M1")
         
         if not candles:
             return None

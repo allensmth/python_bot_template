@@ -301,6 +301,17 @@ class MT5:
         return positions
 
     # Function to partially close an open position
+    def get_closed_trades_today(self):
+        """Returns all trades closed today."""
+        timezone = pytz.timezone("Etc/UTC")
+        today = dt.datetime.now(timezone).replace(hour=0, minute=0, second=0, microsecond=0)
+        deals = self.mt5.history_deals_get(today, dt.datetime.now(timezone))
+        
+        if deals is None:
+            return []
+            
+        return [deal for deal in deals if deal.profit < 0]  # Only return losing trades
+
     def partial_close_position(self, ticket, volume):
         """Closes a part of an open position."""
         position = self.mt5.positions_get(ticket=ticket)
