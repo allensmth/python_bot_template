@@ -72,7 +72,24 @@ class MT5:
         )
 
         return hist_data_df
+    def get_account_info(self):
+        """Fetch and display account information."""
+        account_info = mt5.account_info()
+        if account_info is None:
+            logging.error("Failed to get account info")
+            return None
 
+        # Display trading account data 'as is'
+        print(account_info)
+
+        # Display trading account data in the form of a dictionary
+        print("Show account_info()._asdict():")
+        account_info_dict = account_info._asdict()
+        for prop in account_info_dict:
+            print(f"  {prop}={account_info_dict[prop]}")
+        print()
+
+        return account_info_dict
     # Function to place a trade on MT5
     def place_order(
         self,
@@ -334,12 +351,12 @@ class MT5:
             logging.error(f"Error partially closing ticket #{ticket}. ErrorCode: {order_result[0]}, Error Details: {order_result}")
             return None
 
-    def get_closed_trades_today(self):
+    def get_closed_deals(self):
         """Retrieves all trades closed today."""
         timezone = pytz.timezone("Etc/UTC")
         utc_from = dt.datetime.now(timezone).replace(hour=0, minute=0, second=0, microsecond=0)
         utc_to = dt.datetime.now(timezone).replace(hour=23, minute=59, second=59, microsecond=999)
         
         # Request orders in the specified time range
-        closed_trades = self.mt5.history_orders_get(utc_from, utc_to)
-        return closed_trades
+        closed_deals = self.mt5.history_deals_get(utc_from, utc_to)
+        return closed_deals

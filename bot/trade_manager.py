@@ -111,8 +111,8 @@ class TradeManager:
                     self.partial_close_trade(trade.order_id, partial_close_volume)
             
             # Original trailing stop logic
-            if current_price > trade.price_open + self.risk_management["max_stop_loss_percentage"] * trade.price_open:
-                new_stop_loss = current_price - self.risk_management["max_stop_loss_percentage"] * trade.price_open
+            if current_price > trade.price_open + self.risk_management.max_stop_loss_percentage * trade.price_open:
+                new_stop_loss = current_price - self.risk_management.max_stop_loss_percentage * trade.price_open
                 if new_stop_loss > trade.stop_loss:
                     self.mt5.modify_order(trade.order_id, stop_loss=new_stop_loss)
                     self.log_message(f"manage_trade: Adjusted stop-loss for {trade.symbol} to {new_stop_loss}")
@@ -131,8 +131,8 @@ class TradeManager:
                     self.partial_close_trade(trade.order_id, partial_close_volume)
             
             # Original trailing stop logic
-            if current_price < trade.price_open - self.risk_management["max_stop_loss_percentage"] * trade.price_open:
-                new_stop_loss = current_price + self.risk_management["max_stop_loss_percentage"] * trade.price_open
+            if current_price < trade.price_open - self.risk_management.max_stop_loss_percentage * trade.price_open:
+                new_stop_loss = current_price + self.risk_management.max_stop_loss_percentage * trade.price_open
                 if new_stop_loss < trade.stop_loss:
                     self.mt5.modify_order(trade.order_id, stop_loss=new_stop_loss)
                     self.log_message(f"manage_trade: Adjusted stop-loss for {trade.symbol} to {new_stop_loss}")
@@ -149,18 +149,18 @@ class TradeManager:
 
     def check_risk_limits(self, signal_decision):
         """Ensures that the trade meets risk management limits."""
-        account_balance = self.mt5.get_account_balance()
+        account_balance = self.mt5.get_account_info()["balance"]
         open_trades = self.mt5.get_open_trades()
 
         # Check the number of concurrent trades
-        if len(open_trades) >= self.risk_management["max_concurrent_trades"]:
+        if len(open_trades) >= self.risk_management.max_concurrent_trades:
             self.log_to_error(f"check_risk_limits: Maximum concurrent trades reached. Ignoring new trade for {signal_decision.symbol}.")
             return False
 
         # Calculate potential risk for this trade
         stop_loss_distance = signal_decision.current_price - signal_decision.stop_loss
         risk_per_trade = stop_loss_distance * signal_decision.volume
-        max_risk_per_trade = self.risk_management["max_trade_percentage"] * account_balance
+        max_risk_per_trade = self.risk_management.max_trade_percentage * account_balance
 
         if risk_per_trade > max_risk_per_trade:
             self.log_to_error(f"check_risk_limits: Risk for {signal_decision.symbol} exceeds allowed maximum. Ignoring trade.")
@@ -170,14 +170,14 @@ class TradeManager:
 
     def track_daily_loss(self):
         """Tracks the bot's daily losses and stops trading if the max daily loss limit is reached."""
-        closed_trades = self.mt5.get_closed_trades_today()
+        closed_trades = self.mt5.get_closed_deals()
         total_loss = 0
         for trade in closed_trades:
             profit = trade.profit
             if profit < 0:
                 total_loss += abs(profit)
-        account_balance = self.mt5.get_account_balance()
-        max_daily_loss = self.risk_management["max_daily_loss_percentage"] * account_balance
+        account_balance = self.mt5.get_account_info()["balance"]
+        max_daily_loss = self.risk_management.max_daily_loss_percentage * account_balance
 
         if total_loss >= max_daily_loss:
             self.log_to_error(f"track_daily_loss: Max daily loss reached. No further trades today.")
