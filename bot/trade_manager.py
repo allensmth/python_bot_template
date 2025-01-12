@@ -15,6 +15,7 @@ from typing import List
 import time
 import datetime as dt
 from typing import List
+import talib
 
 class TradeManager:
     def __init__(self, mt5, risk_management, log_to_main, log_message, log_to_error):
@@ -64,26 +65,33 @@ class TradeManager:
             self.log_to_error(f"monitor_open_trades: Critical error while monitoring trades: {error}")
             raise error
 
-    def calculate_stop_loss(self, symbol, postion_type):
-        """Calculate stop loss based on 180 minutes of historical data"""
-        # Get 180 minutes of historical data (30 candles for M5 timeframe)
-        candles = self.mt5.query_historic_data(symbol, 180, "M1")
-        
-        if not candles:
+    def calculate_stop_loss(self, symbol, order_type):
+        """Calculate stop loss using ATR."""
+        # Get historical data
+        candles = self.mt5.get_historical_data(symbol, timeframe="M1", count=180)  # Adjusted count for ATR period
+
+        if not candles or len(candles) < 14:
             return None
-            
-        # Calculate candle heights
-        heights = [candle.high - candle.low for candle in candles]
-        avg_height = sum(heights) / len(heights)
+
+        # Extract high, low, and close prices
+        high_prices = np.array([candle.high for candle in candles])
+        low_prices = np.array([candle.low for candle in candles])
+        close_prices = np.array([candle.close for candle in candles])
+
+        # Calculate ATR
+        atr = talib.ATR(high_prices, low_prices, close_prices, timeperiod=14)[-1]
         
-        if postion_type == self.mt5.ORDER_TYPE_BUY:
-            # For buy orders: lowest low - average height
-            lowest_low = min([candle.low for candle in candles])
-            return lowest_low - avg_height
+        decimals = get_decimals_places(symbol)
+
+        if order_type == self.mt5.BUY_ORDER:
+            # Stop loss below the low
+            stop_loss = low_prices[-1] - atr
         else:
-            # For sell orders: highest high + average height
-            highest_high = max([candle.high for candle in candles])
-            return highest_high + avg_height
+            # Stop loss above the high
+            stop_loss = high_prices[-1] + atr
+        
+        decimal_places = get_decimals_places(symbol)
+        return round(stop_loss, decimal_places)
 
     def manage_position(self, position, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
