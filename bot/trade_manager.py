@@ -68,7 +68,7 @@ class TradeManager:
     def calculate_stop_loss(self, symbol, order_type):
         """Calculate stop loss using ATR."""
         # Get historical data
-        candles = self.mt5.get_historical_data(symbol, timeframe="M1", count=180)  # Adjusted count for ATR period
+        candles = self.mt5.query_historic_data(symbol, 180, "M1")  # Adjusted count for ATR period
 
         if not candles or len(candles) < 14:
             return None
