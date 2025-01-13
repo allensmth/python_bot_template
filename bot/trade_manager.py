@@ -1,19 +1,12 @@
 # import mt5_interface
 # from models.trade_management import TradeSettings
 
-from datetime import datetime as dt
-
+import datetime
 import numpy as np
 
 from bot.risk_management import calculate_lot_size
 from utils.utils import get_trade_multipler, get_decimals_places
 
-import time
-import datetime as dt
-from typing import List
-
-import time
-import datetime as dt
 from typing import List
 import talib
 
@@ -27,13 +20,13 @@ class TradeManager:
         self.log_to_error = log_to_error  # Function for logging error messages
         self.is_running = True  # Flag to control the trade monitoring loop
         self.daily_loss = 0  # Track daily loss to stop trading if threshold is met
-        self.partial_close= True 
+        self.partial_close= True
         # Break even points for different symbols
         self.BREAK_EVEN_POINTS = {
             "BTCUSD": 100,
             "NAS100": 50
         }
-        
+
     def close_open_trades(self):
         """Closes all open trades before stopping the bot."""
         self.log_to_main("close_open_trades: Closing all open trades before stopping...", "trade_manager")
@@ -74,7 +67,7 @@ class TradeManager:
             return None
 
         # Extract high, low, and close prices
-        high_prices = candles['High'].iloc[-180:].max() 
+        high_prices = candles['High'].iloc[-180:].max()
         low_prices = candles['Low'].iloc[-180:].min()
 
         # Calculate ATR
@@ -85,8 +78,8 @@ class TradeManager:
         else:
             # Stop loss above the high
             stop_loss = high_prices + atr
-        
-        return round(float(stop_loss), 2) #TODO 
+
+        return round(float(stop_loss), 2)
 
     def manage_position(self, position, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
@@ -102,14 +95,14 @@ class TradeManager:
         if position.type == self.mt5.ORDER_TYPE_BUY:
             # Calculate profit in points
             profit_points = (current_price - position.price_open) / tick_size
-           
+
             # Check if profit reaches break even points
             if profit_points >= break_even_points and position.sl < position.price_open:
                 # Move stop loss to break even
                 self.mt5.modify_position(position.identifier, stop_loss=position.price_open)
                 if self.partial_close:
                     self.partial_close_position(position.symbol, position.identifier, position.volume)
-            
+
             # Original trailing stop logic
             if current_price > position.price_open + self.risk_management.max_stop_loss_percentage * position.price_open:
                 new_stop_loss = current_price - self.risk_management.max_stop_loss_percentage * position.price_open
@@ -119,21 +112,21 @@ class TradeManager:
         elif position.type == self.mt5.ORDER_TYPE_SELL:
             # Calculate profit in points
             profit_points = (position.price_open - current_price) / tick_size
-            
+
             # Check if profit reaches break even points
             if profit_points >= break_even_points and position.sl > position.price_open:
                 # Move stop loss to break even
-                self.mt5.modify_order(position.order_id, stop_loss=position.price_open)
+                self.mt5.modify_position(position.identifier, stop_loss=position.price_open)
                 if self.partial_close:
                     partial_close_volume = round(position.volume / 3, 2)
                     self.partial_close_position(position.identifier, partial_close_volume)
-            
+
             # Original trailing stop logic
             if current_price < position.price_open - self.risk_management.max_stop_loss_percentage * position.price_open:
                 new_stop_loss = current_price + self.risk_management.max_stop_loss_percentage * position.price_open
                 if new_stop_loss < position.stop_loss:
-                    self.mt5.modify_order(position.identifier, stop_loss=new_stop_loss)
- 
+                    self.mt5.modify_position(position.identifier, stop_loss=new_stop_loss)
+
     def close_trade_early(self, position, current_price):
         """Closes a trade early if it meets specific conditions (e.g., profit threshold)."""
         current_profit = self.mt5.calculate_profit(position)
