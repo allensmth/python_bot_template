@@ -61,6 +61,7 @@ def run_strategy(
                         return None
 
                     signal_decision = SignalDecision(
+                        id=signal['id'],
                         signal=oper_type,
                         symbol=signal['symbol'],
                         order_type=signal['order_type'],
@@ -69,7 +70,8 @@ def run_strategy(
                         risk=strategy.risk,
                         take_profit=tp,
                         stop_loss=sl,
-                        signal_timestamp=now
+                        signal_timestamp=now,
+                        comment=signal['channel_name']
                     )
 
                     log_message(f"run_strategy: Signal generated for {symbol}: {signal_decision}", symbol)

@@ -76,5 +76,20 @@ def process_place_order(signal_decision: SignalDecision, mt5: MT5, log_message: 
 
     log_message(f"run_signal_executor: Successfully placed {signal_decision.symbol}", signal_decision.symbol)
     log_message(f"run_signal_executor: Successfully placed {signal_decision.symbol} for {signal_decision.symbol}", "main")
+
+    # Update database with order_id
+    if signal_decision.id is not None:
+        try:
+            db = DataDB()
+            db.connect()
+            db.execute_update(
+                "UPDATE t_signals SET position_id = %s WHERE id = %s",
+                (placed_trade.order_id, signal_decision.id)
+            )
+            db.close()
+            log_message(f"Updated position_id {placed_trade.order_id} for signal {signal_decision.id}", "database")
+        except Exception as e:
+            log_to_error(f"Failed to update position_id for signal {signal_decision.id}: {e}")
+            raise ValueError(f"Database update failed: {e}")
     
     return placed_trade
