@@ -2,9 +2,11 @@
 # from models.trade_management import TradeSettings
 
 import datetime
+import time
 import numpy as np
 
 from bot.risk_management import calculate_lot_size
+from db.db import DataDB
 from utils.utils import get_trade_multipler, get_decimals_places
 
 from typing import List
@@ -127,9 +129,9 @@ class TradeManager:
                 new_stop_loss = current_price + self.risk_management.max_stop_loss_percentage * position.price_open
                 if new_stop_loss < position.stop_loss:
                     self.mt5.modify_position(position.identifier, stop_loss=new_stop_loss)
-        manage_position_bydb(position) 
+        self.manage_position_bydb(position) 
 
-    def manage_position_bydb(position):
+    def manage_position_bydb(self, position):
         # Check database signals first
         try:
             db = DataDB()

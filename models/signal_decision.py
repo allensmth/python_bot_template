@@ -5,7 +5,6 @@ from typing import Literal, Optional
 
 @dataclass
 class SignalDecision:
-    id: Optional[int] = None
     symbol: str
     signal: int
     order_type: Literal["SELL_STOP", "BUY_STOP"]
@@ -17,6 +16,7 @@ class SignalDecision:
     signal_timestamp: datetime
     break_of_structure: Optional[bool] = None
     granularity_ctf_granularity: Optional[str] = None
+    id: Optional[int] = None
     comment: Optional[str] = None
     
     def __repr__(self):
