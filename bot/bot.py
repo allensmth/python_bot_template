@@ -173,10 +173,14 @@ class Bot:
     def get_next_interval(self):
         now = dt.datetime.now()
         minimum_duration = min(self.trading_times)
-        minutes_to_add = minimum_duration - (now.minute % minimum_duration)
-        next_interval = now + dt.timedelta(minutes=minutes_to_add)
-        # Set seconds and microseconds to zero
-        next_interval = next_interval.replace(second=0, microsecond=0)
+        
+        # Convert current time to total seconds since last full hour
+        current_seconds = (now.minute * 60) + now.second
+        seconds_to_add = minimum_duration - (current_seconds % minimum_duration)
+        
+        next_interval = now + dt.timedelta(seconds=seconds_to_add)
+        # Set microseconds to zero
+        next_interval = next_interval.replace(microsecond=0)
         
         return next_interval
 

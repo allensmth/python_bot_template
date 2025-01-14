@@ -40,14 +40,20 @@
     "trailing_stop": true,
     "partial_close": true
   },
-  "tradable_symbols": {
-    "BTCUSD": [
-      {
-        "granularity": "M1",
-        "indicators": {},
-        "risk": 0.01,
-        "profit_ratio": 1
-      }
-    ]
-  }
+    "tradable_symbols": {
+        "BTCUSD": [
+            {
+                "granularity": "S20",
+                "indicators": {},
+                "risk": 0.01,
+                "profit_ratio": 1
+            },
+            {
+                "granularity": "M1",
+                "indicators": {},
+                "risk": 0.01,
+                "profit_ratio": 1
+            }
+        ]
+    }
 }

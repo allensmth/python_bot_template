@@ -1,17 +1,18 @@
 import decimal
 
 def granularity_to_minutes(granularity: str) -> int:
-
+    """Convert granularity string to total seconds"""
     granularity_map = {
-        'M1': 1,
-        'M5': 5,
-        'M15': 15,
-        'M30': 30,
-        'H1': 60,
-        'H4': 240,
-        'D': 1440,  # 24 hours * 60 minutes
-        'W': 10080, # 7 days * 24 hours * 60 minutes
-        'M': 43200  # 30 days * 24 hours * 60 minutes (approximation)
+        'S20': 20,  # 20 seconds
+        'M1': 60,   # 1 minute
+        'M5': 300,  # 5 minutes
+        'M15': 900, # 15 minutes
+        'M30': 1800, # 30 minutes
+        'H1': 3600, # 1 hour
+        'H4': 14400, # 4 hours
+        'D': 86400,  # 24 hours
+        'W': 604800, # 7 days
+        'M': 2592000 # 30 days (approximation)
     }
 
     if granularity not in granularity_map:
@@ -33,4 +34,3 @@ def get_decimals_places(value):
     
     # Decimals places
     return d_p
-

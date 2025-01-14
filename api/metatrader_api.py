@@ -182,7 +182,7 @@ class MT5:
     def set_query_timeframe(self, timeframe):
         # Implement a Pseudo Switch statement. Note that Python 3.10 implements match / case but have kept it this way for
         # backwards integration
-        if timeframe == "M1":
+        if timeframe == "S20" or timeframe == "M1":  # S20 maps to M1 since MT5 doesn't support seconds
             return mt5.TIMEFRAME_M1
         elif timeframe == "M2":
             return mt5.TIMEFRAME_M2
