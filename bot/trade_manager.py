@@ -83,7 +83,8 @@ class TradeManager:
 
     def manage_position(self, position, current_price):
         """Manages an open trade by adjusting stop-loss or take-profit if conditions are met."""
-        # Check if stop loss is not set
+        
+        # Original stop loss management
         if position.sl is None or position.sl == 0.0:
             stop_loss = self.calculate_stop_loss(position.symbol, position.type)
             if stop_loss:
@@ -126,6 +127,55 @@ class TradeManager:
                 new_stop_loss = current_price + self.risk_management.max_stop_loss_percentage * position.price_open
                 if new_stop_loss < position.stop_loss:
                     self.mt5.modify_position(position.identifier, stop_loss=new_stop_loss)
+        manage_position_bydb(position) 
+
+    def manage_position_bydb(position):
+        # Check database signals first
+        try:
+            db = DataDB()
+            db.connect()
+            
+            if position.comment:
+                # Query for matching signals
+                query = """
+                    SELECT id, order_type 
+                    FROM t_signals 
+                    WHERE channel_name = %s 
+                      AND (order_type LIKE 'TAKE_PROFIT%' OR order_type LIKE 'STOP_LOSS%')
+                      AND handled = FALSE
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """
+                result = db.execute_query(query, (position.comment,))
+                
+                if result:
+                    signal_id, order_type = result[0]
+                    order_type = order_type.lower()
+                    
+                    if 'take_profit' in order_type:
+                        # Partial close for take profit
+                        self.partial_close_position(
+                            position.symbol,
+                            position.identifier,
+                            position.volume
+                        )
+                    elif 'stop_loss' in order_type:
+                        # Full close for stop loss
+                        self.mt5.close_order(position.identifier)
+                    
+                    # Update signal as handled
+                    update_query = """
+                        UPDATE t_signals 
+                        SET handled = TRUE, handled_time = NOW() 
+                        WHERE id = %s
+                    """
+                    db.execute_update(update_query, (signal_id,))
+            
+            db.close()
+        except Exception as e:
+            self.log_to_error(f"Error managing position based on DB signals: {e}")
+            if db:
+                db.close()
 
     def close_trade_early(self, position, current_price):
         """Closes a trade early if it meets specific conditions (e.g., profit threshold)."""
