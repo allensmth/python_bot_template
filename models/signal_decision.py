@@ -16,6 +16,7 @@ class SignalDecision:
     signal_timestamp: datetime
     break_of_structure: Optional[bool] = None
     granularity_ctf_granularity: Optional[str] = None
+    comment: Optional[str] = None
     
     def __repr__(self):
-        return f"SignalDecision(): symbol={self.symbol}, order_type={self.order_type}, stop_loss={self.stop_loss}, signal_timestamp={self.signal_timestamp}"
+        return f"SignalDecision(): symbol={self.symbol}, order_type={self.order_type}, stop_loss={self.stop_loss}, signal_timestamp={self.signal_timestamp}, comment={self.comment}"
