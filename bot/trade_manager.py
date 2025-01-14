@@ -143,10 +143,11 @@ class TradeManager:
                     WHERE channel_name = %s 
                       AND (order_type LIKE 'TAKE_PROFIT%' OR order_type LIKE 'STOP_LOSS%')
                       AND handled = FALSE
+                      AND created_at > %s
                     ORDER BY created_at DESC
                     LIMIT 1
                 """
-                result = db.execute_query(query, (position.comment,))
+                result = db.execute_query(query, (position.comment, position.time))
                 
                 if result:
                     signal_id, order_type = result[0]
