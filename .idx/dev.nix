@@ -7,8 +7,9 @@
   # Use https://search.nixos.org/packages to find packages
   packages = [
     # pkgs.go
-    pkgs.python311
-    pkgs.python311Packages.pip
+    pkgs.python310
+    pkgs.python310Packages.pip
+    pkgs.ta-lib
     # pkgs.nodejs_20
     pkgs.postgresql
     # pkgs.nodePackages.nodemon

@@ -17,7 +17,7 @@ grpcio-status==1.66.1
 idna==3.7
 importlib_metadata==8.4.0
 # MetaTrader5==5.0.4288
-mt5linux
+# mt5linux==0.1.9
 numpy==1.26.4
 opentelemetry-api==1.27.0
 pandas==2.2.2

@@ -25,8 +25,11 @@ class TradeManager:
         self.partial_close= True
         # Break even points for different symbols
         self.BREAK_EVEN_POINTS = {
-            "BTCUSD": 100,
-            "NAS100": 50
+            "BTCUSD.pi": 1000,
+            "NAS100.p": 50,
+            "SP500.p": 15,
+            "US2000.p": 15,
+            "XAUUSD.pi": 3,
         }
 
     def close_open_trades(self):
