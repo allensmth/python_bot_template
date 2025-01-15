@@ -38,6 +38,10 @@ def run_strategy(
                 now = datetime.now(pytz.utc)
                 signal_created_at = signal['created_at'].replace(tzinfo=pytz.utc)
                 
+                # Skip if price is None
+                if signal['price'] is None:
+                   signal['price'] = candle_data['Close'].iloc[-1] 
+                    
                 if abs(signal['price'] - candle_data['Close'].iloc[-1]) < atr15 * 5 and (now - signal_created_at).seconds < 150 * 60:
                     #计算sl
 

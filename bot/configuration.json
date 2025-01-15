@@ -41,15 +41,25 @@
     "partial_close": true
   },
     "tradable_symbols": {
-        "BTCUSD": [
+        "NAS100": [
             {
                 "granularity": "S20",
                 "indicators": {},
                 "risk": 0.01,
                 "profit_ratio": 1
-            },
+            }
+        ],
+        "SP500": [
             {
-                "granularity": "M1",
+                "granularity": "S20",
+                "indicators": {},
+                "risk": 0.01,
+                "profit_ratio": 1
+            }
+        ],
+        "US2000": [
+            {
+                "granularity": "S20",
                 "indicators": {},
                 "risk": 0.01,
                 "profit_ratio": 1

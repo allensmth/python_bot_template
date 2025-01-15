@@ -240,7 +240,7 @@ class TradeManager:
             except Exception as e:
                 self.log_to_error(f"run_trade_manager: Critical error in trade management: {e}")
             finally:
-                time.sleep(5)  # Adjust sleep time as needed to control trade management frequency
+                time.sleep(20)  # Adjust sleep time as needed to control trade management frequency
 
     def stop_trade_manager(self):
         """Stops the trade manager process."""
