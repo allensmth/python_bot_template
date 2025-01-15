@@ -390,6 +390,49 @@ class MT5:
         closed_deals = self.mt5.history_deals_get(utc_from, utc_to)
         return closed_deals
 
+    def close_order(self, ticket):
+        """Closes an entire position by ticket number."""
+        position = self.mt5.positions_get(ticket=ticket)
+        if not position:
+            logging.error(f"Position with ticket #{ticket} not found")
+            return None
+
+        symbol = position[0].symbol
+        order_type = position[0].type  # 0 for buy, 1 for sell
+        volume = position[0].volume
+        
+        if order_type == self.mt5.ORDER_TYPE_BUY:
+            trade_type = self.mt5.ORDER_TYPE_SELL
+            price = self.mt5.symbol_info_tick(symbol).bid
+        else:
+            trade_type = self.mt5.ORDER_TYPE_BUY
+            price = self.mt5.symbol_info_tick(symbol).ask
+        
+        deviation = 200
+        request = {
+            "action": self.mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": volume,
+            "type": trade_type,
+            "position": ticket,
+            "price": price,
+            "deviation": deviation,
+            "magic": 234000,
+            "comment": "full close",
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": self.mt5.ORDER_FILLING_FOK,
+        }
+        
+        print(f"close_order: {request}")
+        order_result = self.mt5.order_send(request)
+
+        if order_result[0] == 10009:
+            logging.info(f"Close order for ticket #{ticket} successful")
+            return order_result
+        else:
+            logging.error(f"Error closing ticket #{ticket}. ErrorCode: {order_result[0]}, Error Details: {order_result}")
+            return None
+
     def symbol_info(self, symbol):
         """Fetch symbol information."""
         return self.mt5.symbol_info(symbol)

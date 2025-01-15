@@ -168,7 +168,8 @@ class TradeManager:
                 result = db.query_single(query)
 
                 if result and len(result) > 0:
-                    signal_id, order_type = result[0]
+                    signal_id = result['id']
+                    order_type = result['order_type']
                    
                     order_type = order_type.lower()
                     
