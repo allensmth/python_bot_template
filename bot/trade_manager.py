@@ -25,11 +25,11 @@ class TradeManager:
         self.partial_close= True
         # Break even points for different symbols
         self.BREAK_EVEN_POINTS = {
-            "BTCUSD.pi": 1000,
-            "NAS100.p": 5000,
-            "SP500.p": 1500,
-            "US2000.p": 1500,
-            "XAUUSD.pi": 300,
+            "BTCUSD": 1000,
+            "NAS100": 5000,
+            "SP500": 1500,
+            "US2000": 1500,
+            "XAUUSD": 300,
         }
 
     def close_open_trades(self):
@@ -102,7 +102,7 @@ class TradeManager:
             if stop_loss:
                 self.mt5.modify_position(position.identifier, stop_loss=stop_loss)
         # Get break even points for the symbol
-        break_even_points = self.BREAK_EVEN_POINTS.get(position.symbol, 100)
+        break_even_points = self.BREAK_EVEN_POINTS.get(position.symbol, 10000)
         symbol_info = self.mt5.symbol_info(position.symbol)
         if symbol_info is None:
             self.log_to_error(f"Could not get symbol info for {position.symbol}")
