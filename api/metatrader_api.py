@@ -392,3 +392,4 @@ class MT5:
 
     def symbol_info(self, symbol):
         """Fetch symbol information."""
+        return self.mt5.symbol_info(symbol)

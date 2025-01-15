@@ -104,6 +104,10 @@ class TradeManager:
         # Get break even points for the symbol
         break_even_points = self.BREAK_EVEN_POINTS.get(position.symbol, 100)
         symbol_info = self.mt5.symbol_info(position.symbol)
+        if symbol_info is None:
+            self.log_to_error(f"Could not get symbol info for {position.symbol}")
+            return
+            
         tick_size = symbol_info.trade_tick_size
         if position.type == self.mt5.ORDER_TYPE_BUY:
             # Calculate profit in points
@@ -159,7 +163,7 @@ class TradeManager:
                     ORDER BY created_at DESC
                     LIMIT 1
                 """
-                result = db.execute_query(query, (position.comment, position.time))
+                result = db.query_single(query, (position.comment, position.time))
                 
                 if result:
                     signal_id, order_type = result[0]
