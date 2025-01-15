@@ -4,7 +4,7 @@
 import datetime
 import time
 import numpy as np
-
+import pandas as pd
 from bot.risk_management import calculate_lot_size
 from db.db import DataDB
 from utils.utils import get_trade_multipler, get_decimals_places
@@ -26,10 +26,10 @@ class TradeManager:
         # Break even points for different symbols
         self.BREAK_EVEN_POINTS = {
             "BTCUSD.pi": 1000,
-            "NAS100.p": 50,
-            "SP500.p": 15,
-            "US2000.p": 15,
-            "XAUUSD.pi": 3,
+            "NAS100.p": 5000,
+            "SP500.p": 1500,
+            "US2000.p": 1500,
+            "XAUUSD.pi": 300,
         }
 
     def close_open_trades(self):
@@ -156,17 +156,20 @@ class TradeManager:
                 query = """
                     SELECT id, order_type 
                     FROM t_signals 
-                    WHERE channel_name = %s 
+                    WHERE channel_name = '""" + position.comment + """'
                       AND (order_type LIKE 'TAKE_PROFIT%' OR order_type LIKE 'STOP_LOSS%')
                       AND handled = FALSE
-                      AND created_at > %s
                     ORDER BY created_at DESC
                     LIMIT 1
                 """
-                result = db.query_single(query, (position.comment, position.time))
-                
-                if result:
+                # Convert position time (seconds since epoch) to datetime string
+                position_time = datetime.datetime.fromtimestamp(position.time).strftime('%Y-%m-%d %H:%M:%S')
+                mytime = pd.to_datetime(position.time, unit='s')
+                result = db.query_single(query)
+
+                if result and len(result) > 0:
                     signal_id, order_type = result[0]
+                   
                     order_type = order_type.lower()
                     
                     if 'take_profit' in order_type:
@@ -184,9 +187,11 @@ class TradeManager:
                     update_query = """
                         UPDATE t_signals 
                         SET handled = TRUE, handled_time = NOW() 
-                        WHERE id = %s
+                        WHERE id = ?
                     """
                     db.execute_update(update_query, (signal_id,))
+                else:
+                    self.log_message("No valid DB signals found", "trade_manager")
             
             db.close()
         except Exception as e:

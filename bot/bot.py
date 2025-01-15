@@ -230,7 +230,7 @@ class Bot:
                             signal_decision.current_price,
                             signal_decision.stop_loss,
                             signal_decision.take_profit,
-                            'Comment',
+                            signal_decision.comment,
                             log_message=self.log_message,
                             log_to_error=self.log_to_error
                         )

@@ -35,6 +35,8 @@ class DataDB:
         if self.connection is None:
             print("Not connected to the database")
             return None
+        #打印sql语句
+        #print(f"query_single: {query} with params {params}")
         cursor = self.connection.cursor()
         cursor.execute(query, params)
         result = cursor.fetchone()
