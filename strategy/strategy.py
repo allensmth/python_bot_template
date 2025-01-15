@@ -31,7 +31,7 @@ def run_strategy(
         if signal:
             mark_signal_as_handled(db, signal)
             # 如果查询得到signal的price和当前价格差距不大,小于atr的1/2那么操作，如果signal的创建时间差距在15分钟内，那么操作
-            atr15 = talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=15).iloc[-1]
+            atr15 = 10 * talib.ATR(candle_data['High'], candle_data['Low'], candle_data['Close'], timeperiod=15).iloc[-1]
             #如果sinal的操作是market，那么直接操作
             if signal['order_type'] == 'BUY_MARKET' or signal['order_type'] == 'SELL_MARKET':
                 # 获取当前时间并添加时区信息

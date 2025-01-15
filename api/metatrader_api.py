@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import MetaTrader5 as mt5
 import pytz
@@ -115,40 +116,62 @@ class MT5:
     
             
             
-            # Create the request
+           
+            symbol_info = mt5.symbol_info(symbol)
+            if not symbol_info:
+                raise ValueError(f"Could not get symbol info for {symbol}")
+            
+            # Get price precision and volume step
+            price_precision = symbol_info.digits
+            volume_step = symbol_info.volume_step
+            
+            # Round values to correct precision
+            price = round(price, price_precision)
+            stop_loss = round(stop_loss, price_precision) if stop_loss else None
+            take_profit = round(take_profit, price_precision) if take_profit else None
+            volume = round(volume, int(-math.log10(volume_step)))
+
+            
+            if order_type == self.mt5.ORDER_TYPE_BUY or order_type == self.mt5.ORDER_TYPE_SELL:
+                # Get symbol's minimum stop level and point value
+                min_stop_level = symbol_info.trade_stops_level
+                point_value = symbol_info.point
+                
+                # Calculate minimum allowed distance
+                min_distance = min_stop_level * point_value
+                
+                # Validate stop loss
+                if stop_loss:
+                    current_sl_distance = abs(price - stop_loss)
+                    if current_sl_distance < min_distance:
+                        # Adjust SL to minimum allowed distance
+                        stop_loss = price - min_distance if order_type == self.mt5.ORDER_TYPE_BUY else price + min_distance
+                        stop_loss= None
+                  
+                
+                # Validate take profit
+                if take_profit:
+                    current_tp_distance = abs(price - take_profit)
+                    if current_tp_distance < min_distance:
+                        # Adjust TP to minimum allowed distance
+                        take_profit = None
+                
+            deviation = 100
             request = {
-                "action": self.mt5.TRADE_ACTION_PENDING,
+                "action": mt5.TRADE_ACTION_DEAL,
                 "symbol": symbol,
                 "volume": volume,
                 "type": order_type,
                 "price": price,
                 "sl": stop_loss,
                 "tp": take_profit,
-                "type_filling": self.mt5.ORDER_FILLING_RETURN,
-                "type_time": self.mt5.ORDER_TIME_GTC,
-                "comment": f"{comment}",
+                "deviation": deviation,
+                "magic": 234000,
+                "comment": comment,
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": mt5.ORDER_FILLING_IOC,
             }
-           
             
-            if order_type == self.mt5.ORDER_TYPE_BUY:
-                point = mt5.symbol_info(symbol).point
-                price = mt5.symbol_info_tick(symbol).ask
-                deviation = 200
-                request = {
-                    "action": mt5.TRADE_ACTION_DEAL,
-                    "symbol": symbol,
-                    "volume": volume,
-                    "type": mt5.ORDER_TYPE_BUY,
-                    "price": price,
-                    "sl": stop_loss,
-                    "tp": take_profit,
-                    "deviation": deviation,
-                    "magic": 234000,
-                    "comment": "python script open",
-                    "type_time": mt5.ORDER_TIME_GTC,
-                    "type_filling": mt5.ORDER_FILLING_FOK,
-                }
-                
             print(f"palce_order: {request}")
 
             # Send the order to MT5
@@ -369,4 +392,3 @@ class MT5:
 
     def symbol_info(self, symbol):
         """Fetch symbol information."""
-        return mt5.symbol_info(symbol)

@@ -84,6 +84,13 @@ class TradeManager:
             # Stop loss above the high
             stop_loss = high_prices + atr
 
+        # 如果stop loss 和当前价格的差距小于atr的1/2，那么使用15倍的atr作为止损距离
+        if abs(stop_loss - candles['Close'].iloc[-1]) < atr / 2:
+            if order_type == self.mt5.ORDER_TYPE_BUY:
+                stop_loss = stop_loss - atr * 15
+            else:
+                stop_loss = stop_loss + atr * 15
+        
         return round(float(stop_loss), 2)
 
     def manage_position(self, position, current_price):

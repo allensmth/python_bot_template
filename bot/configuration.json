@@ -45,7 +45,15 @@
             {
                 "granularity": "S20",
                 "indicators": {},
-                "risk": 0.01,
+                "risk": 0.02,
+                "profit_ratio": 1
+            }
+        ],
+       "US2000": [
+            {
+                "granularity": "S20",
+                "indicators": {},
+                "risk": 0.02,
                 "profit_ratio": 1
             }
         ],
@@ -53,17 +61,9 @@
             {
                 "granularity": "S20",
                 "indicators": {},
-                "risk": 0.01,
+                "risk": 0.02,
                 "profit_ratio": 1
             }
-        ],
-        "US2000": [
-            {
-                "granularity": "S20",
-                "indicators": {},
-                "risk": 0.01,
-                "profit_ratio": 1
-            }
-        ]
+        ] 
     }
 }
