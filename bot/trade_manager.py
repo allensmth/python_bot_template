@@ -188,9 +188,8 @@ class TradeManager:
                     update_query = """
                         UPDATE t_signals 
                         SET handled = TRUE, handled_time = NOW() 
-                        WHERE id = ?
-                    """
-                    db.execute_update(update_query, (signal_id,))
+                        WHERE id = """ + str(signal_id)
+                    db.execute_update(update_query)
                 else:
                     self.log_message("No valid DB signals found", "trade_manager")
             
