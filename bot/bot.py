@@ -6,8 +6,6 @@ from typing import Dict, List
 import datetime as dt 
 import threading
 import logging
-import google.cloud.logging
-from google.cloud.logging.handlers import CloudLoggingHandler
 
 from api.metatrader_api import MT5
 from bot.signal_management import process_signal
@@ -129,22 +127,22 @@ class Bot:
             )
 
     def setup_logs(self):
-        cloud_logging_enabled = self.logging_config.cloud_logging.enabled
+        betterstack_token = self.logging_config.cloud_logging.betterstack_token if self.logging_config.cloud_logging.enabled else None
         self.logs: Dict[str, LogWrapper] = {}
         
        # Create log wrappers for all symbols and components
         for symbol in self.trading_symbols.keys():
-            self.logs[symbol] = LogWrapper(symbol, cloud_logging_enabled=cloud_logging_enabled)
+            self.logs[symbol] = LogWrapper(symbol, betterstack_token=betterstack_token)
             for symbol_candle in self.trading_symbols[symbol]:
                 self.log_message(f"{symbol_candle}", symbol)
         
         for logging_name, logging_attributes in self.logging.items():
             _name = logging_attributes.name
-            self.logs[_name] = LogWrapper(_name, cloud_logging_enabled=cloud_logging_enabled)
+            self.logs[_name] = LogWrapper(_name, betterstack_token=betterstack_token)
         
         # Specific log for trade processor, if applicable
         if self.bot_config.signal_management.trade_processor:
-            self.logs["trade_processor"] = LogWrapper("trade_processor", cloud_logging_enabled=cloud_logging_enabled)
+            self.logs["trade_processor"] = LogWrapper("trade_processor", betterstack_token=betterstack_token)
         
         self.log_to_main(
             f"Bot started with {StrategyConfiguration.settings_to_str(self.strategy_configuration)}"

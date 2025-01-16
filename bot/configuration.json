@@ -30,7 +30,8 @@
       }
     },
     "cloud_logging": {
-      "enabled": false
+      "enabled": true,
+      "betterstack_token": "iWkusA4Wy58Y5KiufE5MN7hU"
     }
   },
   "signal_management": {
@@ -40,30 +41,30 @@
     "trailing_stop": true,
     "partial_close": true
   },
-    "tradable_symbols": {
-        "NAS100": [
-            {
-                "granularity": "S20",
-                "indicators": {},
-                "risk": 0.02,
-                "profit_ratio": 1
-            }
-        ],
-       "US2000": [
-            {
-                "granularity": "S20",
-                "indicators": {},
-                "risk": 0.02,
-                "profit_ratio": 1
-            }
-        ],
-        "SP500": [
-            {
-                "granularity": "S20",
-                "indicators": {},
-                "risk": 0.02,
-                "profit_ratio": 1
-            }
-        ] 
-    }
+  "tradable_symbols": {
+    "NAS100": [
+      {
+        "granularity": "S20",
+        "indicators": {},
+        "risk": 0.02,
+        "profit_ratio": 1
+      }
+    ],
+    "US2000": [
+      {
+        "granularity": "S20",
+        "indicators": {},
+        "risk": 0.02,
+        "profit_ratio": 1
+      }
+    ],
+    "SP500": [
+      {
+        "granularity": "S20",
+        "indicators": {},
+        "risk": 0.02,
+        "profit_ratio": 1
+      }
+    ]
+  }
 }
